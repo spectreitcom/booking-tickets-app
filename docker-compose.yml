@@ -1,0 +1,188 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - booking-network
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - booking-network
+
+  payments-db:
+    image: postgres:18.4-alpine
+    container_name: payments-db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: payments
+    ports:
+      - '5432:5432'
+    volumes:
+      - payments-db-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U user -d payments']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - booking-network
+
+  booking-db:
+    image: postgres:18.4-alpine
+    container_name: booking-db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: booking
+    ports:
+      - '5433:5432'
+    volumes:
+      - booking-db-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U user -d booking']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - booking-network
+
+  seats-db:
+    image: postgres:18.4-alpine
+    container_name: seats-db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: seats
+    ports:
+      - '5434:5432'
+    volumes:
+      - seats-db-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U user -d seats']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - booking-network
+
+  gateway-service:
+    build:
+      context: .
+      target: development
+    container_name: gateway-service
+    command: npx nest start gateway-service --watch
+    ports:
+      - '3000:3000'
+    environment:
+      - port=3000
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - booking-network
+
+  payments-service:
+    build:
+      context: .
+      target: development
+    container_name: payments-service
+    command: npx nest start payments-service --watch
+    ports:
+      - '3001:3000'
+    environment:
+      - port=3000
+      - DATABASE_URL=postgresql://user:password@payments-db:5432/payments
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      payments-db:
+        condition: service_healthy
+    networks:
+      - booking-network
+
+  booking-service:
+    build:
+      context: .
+      target: development
+    container_name: booking-service
+    command: npx nest start booking-service --watch
+    ports:
+      - '3002:3000'
+    environment:
+      - port=3000
+      - DATABASE_URL=postgresql://user:password@booking-db:5432/booking
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      booking-db:
+        condition: service_healthy
+    networks:
+      - booking-network
+
+  seats-service:
+    build:
+      context: .
+      target: development
+    container_name: seats-service
+    command: npx nest start seats-service --watch
+    ports:
+      - '3003:3000'
+    environment:
+      - port=3000
+      - DATABASE_URL=postgresql://user:password@seats-db:5432/seats
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      seats-db:
+        condition: service_healthy
+    networks:
+      - booking-network
+
+networks:
+  booking-network:
+    driver: bridge
+
+volumes:
+  rabbitmq-data:
+  redis-data:
+  payments-db-data:
+  booking-db-data:
+  seats-db-data:

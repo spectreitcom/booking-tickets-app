@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Event {
+  id    String @id @default(uuid(4)) @db.Uuid
+  name  String @db.VarChar(120)
+  seats Seat[]
+
+  @@index([name])
+  @@map("events")
+}
+
+model Seat {
+  id                  String     @id @default(uuid(4)) @db.Uuid
+  price               Int        @default(0)
+  status              SeatStatus @default(AVAILABLE)
+  reservedByBookingId String?    @db.Uuid
+
+  eventId String @unique @db.Uuid
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, status])
+  @@map("seats")
+}
+
+enum SeatStatus {
+  AVAILABLE
+  RESERVED
+}
