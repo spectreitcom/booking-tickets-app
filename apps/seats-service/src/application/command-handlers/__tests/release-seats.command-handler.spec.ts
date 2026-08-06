@@ -14,7 +14,7 @@ describe('ReleaseSeatsCommandHandler', () => {
   beforeEach(() => {
     prismaService = {
       seat: {
-        updateMany: jest.fn(),
+        updateManyAndReturn: jest.fn(),
       },
     } as unknown as jest.Mocked<PrismaService>;
 
@@ -24,17 +24,29 @@ describe('ReleaseSeatsCommandHandler', () => {
   it('should release the requested seats and return their IDs', async () => {
     const seatIds = [randomUUID(), randomUUID()];
     const command = new ReleaseSeatsCommand(seatIds);
-    const updateMany = jest.spyOn(prismaService.seat, 'updateMany');
+    const updateManyAndReturn = jest.spyOn(
+      prismaService.seat,
+      'updateManyAndReturn',
+    );
 
-    updateMany.mockResolvedValue({ count: seatIds.length });
+    updateManyAndReturn.mockResolvedValue(
+      seatIds.map((id) => ({
+        id,
+        status: 'AVAILABLE',
+        price: 100,
+        eventId: randomUUID(),
+        reservedByBookingId: null,
+      })),
+    );
 
     const result = await handler.execute(command);
 
-    expect(updateMany).toHaveBeenCalledWith({
+    expect(updateManyAndReturn).toHaveBeenCalledWith({
       where: {
         id: {
           in: seatIds,
         },
+        status: 'RESERVED',
       },
       data: {
         status: 'AVAILABLE',
@@ -46,14 +58,17 @@ describe('ReleaseSeatsCommandHandler', () => {
   it('should pass an empty seat ID list to the bulk update', async () => {
     const seatIds: string[] = [];
     const command = new ReleaseSeatsCommand(seatIds);
-    const updateMany = jest.spyOn(prismaService.seat, 'updateMany');
+    const updateManyAndReturn = jest.spyOn(
+      prismaService.seat,
+      'updateManyAndReturn',
+    );
 
-    updateMany.mockResolvedValue({ count: 0 });
+    updateManyAndReturn.mockResolvedValue([]);
 
     const result = await handler.execute(command);
 
-    expect(updateMany).toHaveBeenCalledWith({
-      where: { id: { in: [] } },
+    expect(updateManyAndReturn).toHaveBeenCalledWith({
+      where: { id: { in: [] }, status: 'RESERVED' },
       data: { status: 'AVAILABLE' },
     });
     expect(result).toEqual([]);
@@ -63,7 +78,7 @@ describe('ReleaseSeatsCommandHandler', () => {
     const seatIds = [randomUUID()];
     const command = new ReleaseSeatsCommand(seatIds);
     const databaseError = new Error('Database unavailable');
-    const updateMany = jest.spyOn(prismaService.seat, 'updateMany');
+    const updateMany = jest.spyOn(prismaService.seat, 'updateManyAndReturn');
 
     updateMany.mockRejectedValue(databaseError);
 
