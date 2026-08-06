@@ -26,9 +26,18 @@ async function bootstrap() {
     .setTitle('Gateway Service')
     .setDescription('Booking tickets app gateway API')
     .setVersion('1.0')
+    .setContact(
+      'Przemysław Chudziński',
+      'mywebsite.com',
+      'p.chudzinski.spectreit@gmail.com',
+    )
+    .setVersion('1.0.0')
     .build();
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, swaggerDocument);
+  SwaggerModule.setup('api/docs', app, swaggerDocument, {
+    jsonDocumentUrl: '/api/docs-json',
+    customJsStr: "document.querySelector('html').classList.add('dark-mode')",
+  });
 
   await app.listen(process.env.port ?? 3000);
 }
