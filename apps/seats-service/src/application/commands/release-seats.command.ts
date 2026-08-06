@@ -1,7 +1,9 @@
 import { ICommand } from '@nestjs/cqrs';
-import { IsUUID, validateSync } from 'class-validator';
+import { IsArray, IsNotEmpty, IsUUID, validateSync } from 'class-validator';
 
 export class ReleaseSeatsCommand implements ICommand {
+  @IsArray()
+  @IsNotEmpty()
   @IsUUID('4', { each: true })
   readonly seatIds: string[];
 

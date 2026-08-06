@@ -12,17 +12,18 @@ export class ReleaseSeatsCommandHandler implements ICommandHandler<
   async execute(command: ReleaseSeatsCommand): Promise<string[]> {
     const { seatIds } = command;
 
-    await this.prismaService.seat.updateMany({
+    const result = await this.prismaService.seat.updateManyAndReturn({
       where: {
         id: {
           in: seatIds,
         },
+        status: 'RESERVED',
       },
       data: {
         status: 'AVAILABLE',
       },
     });
 
-    return seatIds;
+    return result.map((seat) => seat.id);
   }
 }
