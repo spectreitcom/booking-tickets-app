@@ -1,3 +1,19 @@
 import { ICommand } from '@nestjs/cqrs';
+import { IsUUID, validateSync } from 'class-validator';
 
-export class ReserveSeatsCommand implements ICommand {}
+export class ReserveSeatsCommand implements ICommand {
+  @IsUUID('4', { each: true })
+  readonly seatIds: string[];
+
+  constructor(seatIds: string[]) {
+    this.seatIds = seatIds;
+    this.validate();
+  }
+
+  private validate() {
+    const errors = validateSync(this);
+    if (errors.length > 0) {
+      throw new Error('Invalid ReserveSeatsCommand');
+    }
+  }
+}
