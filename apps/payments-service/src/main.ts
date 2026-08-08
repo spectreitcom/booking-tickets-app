@@ -1,3 +1,5 @@
+import './instrumentation';
+
 import { NestFactory } from '@nestjs/core';
 import { PaymentsServiceModule } from './payments-service.module';
 

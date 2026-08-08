@@ -12,8 +12,6 @@ import {
 
 import { resourceFromAttributes } from '@opentelemetry/resources';
 
-import { PrismaInstrumentation } from '@prisma/instrumentation';
-
 import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
 
 import { config } from 'dotenv';
@@ -54,7 +52,6 @@ const sdk = new NodeSDK({
       },
     }),
 
-    new PrismaInstrumentation(),
     new AmqplibInstrumentation(),
   ],
 });

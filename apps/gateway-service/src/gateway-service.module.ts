@@ -7,6 +7,9 @@ import Joi from 'joi';
 
 const envSchema = Joi.object({
   RABBITMQ_URL: Joi.string().required(),
+  OTEL_SERVICE_NAME: Joi.string().required(),
+  OTEL_EXPORTER_OTLP_ENDPOINT: Joi.string().required(),
+  OTEL_METRICS_PORT: Joi.number().optional(),
 });
 
 @Module({
