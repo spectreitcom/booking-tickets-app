@@ -7,6 +7,9 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -17,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 24
@@ -26,6 +31,6 @@ jobs:
       - run: npm run prisma:seats:generate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      - run: npm run lint
+      - run: npm run lint:check
       - run: npm run test
       - run: npm run build
