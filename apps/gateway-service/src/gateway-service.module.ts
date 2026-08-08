@@ -3,11 +3,17 @@ import { EventsModule } from './endpoints/events/events.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { SEATS_SERVICE } from './constants';
+import Joi from 'joi';
+
+const envSchema = Joi.object({
+  RABBITMQ_URL: Joi.string().required(),
+});
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      validationSchema: envSchema,
     }),
     ClientsModule.registerAsync({
       isGlobal: true,
