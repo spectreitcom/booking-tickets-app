@@ -48,6 +48,12 @@ export class EventsController {
       },
     },
   })
+  @ApiNotFoundResponse({
+    description: 'Event not found',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid event ID',
+  })
   @Get(':eventId')
   async getEvent(@Param('eventId', new ParseUUIDPipe()) eventId: string) {
     return await this.eventsService.getEvent(eventId);
