@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 10s
+
+scrape_configs:
+  - job_name: gateway-service
+    static_configs:
+      - targets: ['gateway-service:9464']
+
+  - job_name: payments-service
+    static_configs:
+      - targets: ['payments-service:9464']
+
+  - job_name: booking-service
+    static_configs:
+      - targets: ['booking-service:9464']
+
+  - job_name: seats-service
+    static_configs:
+      - targets: ['seats-service:9464']

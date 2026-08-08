@@ -1,3 +1,5 @@
+import './instrumentation';
+
 import { NestFactory } from '@nestjs/core';
 import { SeatsServiceModule } from './application/seats-service.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';

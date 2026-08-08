@@ -95,9 +95,12 @@ services:
     command: npx nest start gateway-service --watch
     ports:
       - '3000:3000'
+      - '9464:9464'
     environment:
       - port=3000
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - OTEL_SERVICE_NAME=gateway-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -106,6 +109,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     networks:
       - booking-network
 
@@ -117,9 +122,12 @@ services:
     command: npx nest start payments-service --watch
     ports:
       - '3001:3000'
+      - '9465:9464'
     environment:
       - port=3000
       - DATABASE_URL=postgresql://user:password@payments-db:5432/payments
+      - OTEL_SERVICE_NAME=payments-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -128,6 +136,8 @@ services:
         condition: service_healthy
       payments-db:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     networks:
       - booking-network
 
@@ -139,9 +149,12 @@ services:
     command: npx nest start booking-service --watch
     ports:
       - '3002:3000'
+      - '9466:9464'
     environment:
       - port=3000
       - DATABASE_URL=postgresql://user:password@booking-db:5432/booking
+      - OTEL_SERVICE_NAME=booking-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -150,6 +163,8 @@ services:
         condition: service_healthy
       booking-db:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     networks:
       - booking-network
 
@@ -161,10 +176,13 @@ services:
     command: npx nest start seats-service --watch
     ports:
       - '3003:3000'
+      - '9467:9464'
     environment:
       - port=3000
       - DATABASE_URL=postgresql://user:password@seats-db:5432/seats
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - OTEL_SERVICE_NAME=seats-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -173,6 +191,57 @@ services:
         condition: service_healthy
       seats-db:
         condition: service_healthy
+      jaeger:
+        condition: service_started
+    networks:
+      - booking-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - '16686:16686' # Jaeger UI
+      - '4317:4317' # OTLP gRPC receiver
+      - '4318:4318' # OTLP HTTP receiver
+    networks:
+      - booking-network
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - '9090:9090' # Prometheus UI
+    depends_on:
+      gateway-service:
+        condition: service_started
+      payments-service:
+        condition: service_started
+      booking-service:
+        condition: service_started
+      seats-service:
+        condition: service_started
+    networks:
+      - booking-network
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - '3300:3000' # Grafana UI
+    depends_on:
+      prometheus:
+        condition: service_started
     networks:
       - booking-network
 
@@ -186,3 +255,5 @@ volumes:
   payments-db-data:
   booking-db-data:
   seats-db-data:
+  prometheus-data:
+  grafana-data:

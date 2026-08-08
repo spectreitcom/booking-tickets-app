@@ -10,6 +10,8 @@ import Joi from 'joi';
 const envSchema = Joi.object({
   DATABASE_URL: Joi.string().required(),
   RABBITMQ_URL: Joi.string().required(),
+  OTEL_SERVICE_NAME: Joi.string().required(),
+  OTEL_EXPORTER_OTLP_ENDPOINT: Joi.string().required(),
 });
 
 @Module({

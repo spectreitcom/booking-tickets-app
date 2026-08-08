@@ -1,3 +1,5 @@
+import './instrumentation';
+
 import { NestFactory } from '@nestjs/core';
 import { GatewayServiceModule } from './gateway-service.module';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
