@@ -31,6 +31,6 @@ jobs:
       - run: npm run prisma:seats:generate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      - run: npm run lint:check
+      - run: npm run lint
       - run: npm run test
       - run: npm run build
