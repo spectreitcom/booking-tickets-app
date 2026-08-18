@@ -39,7 +39,6 @@ export function eventSerializer(event: BookingEvent) {
       occurredAt: event.occurredAt,
     };
   } else {
-    // todo: implement an exhaustive check
     throw new Error('Unknown event type');
   }
 }
