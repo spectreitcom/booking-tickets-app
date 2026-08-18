@@ -8,6 +8,9 @@ import { AddSeatToEventCommand } from '../application/commands/add-seat-to-event
 import { GetEventDto } from './dto/get-event.dto';
 import { GetEventQuery } from '../application/queries/get-event.query';
 import { EventReadModel } from '../application/query-handlers/read-models/event.read-model';
+import { GetNotReservedSeatsByIdsQuery } from '../application/queries/get-not-reserved-seats-by-ids.query';
+import { SeatReadModel } from '../application/query-handlers/read-models/seat.read-model';
+import { GetNotReservedSeatsByIdsDto } from './dto/get-not-reserved-seats-by-ids.dto';
 
 @Controller()
 export class SeatsController {
@@ -35,5 +38,15 @@ export class SeatsController {
     return await this.queryBus.execute<GetEventQuery, EventReadModel>(
       new GetEventQuery(payload.eventId),
     );
+  }
+
+  @MessagePattern('seats.get-not-reserved-seats-by-ids')
+  async getNotReservedSeatsByIds(
+    @Payload() payload: GetNotReservedSeatsByIdsDto,
+  ) {
+    return await this.queryBus.execute<
+      GetNotReservedSeatsByIdsQuery,
+      SeatReadModel[]
+    >(new GetNotReservedSeatsByIdsQuery(payload.seatIds));
   }
 }

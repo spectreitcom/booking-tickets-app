@@ -27,10 +27,9 @@ export class EventsService
 
   async getEvent(id: string) {
     return await firstValueFrom(
-      this.seatsService.send<{ id: string; name: string }>(
-        'seats.get-event',
-        id,
-      ),
+      this.seatsService.send<{ id: string; name: string }>('seats.get-event', {
+        eventId: id,
+      }),
     );
   }
 
