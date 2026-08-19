@@ -33,6 +33,7 @@ jobs:
       - run: npm run prisma:booking:generate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - run: npx prettier --write .
       - run: npx prettier --check .
       - run: npm run lint
       - run: npm run test
