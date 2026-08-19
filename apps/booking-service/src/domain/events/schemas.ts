@@ -8,7 +8,7 @@ export const bookingCreatedEventSchema = z.object({
   ),
   status: z.string(),
   version: z.int().positive(),
-  occurredAt: z.date(),
+  occurredAt: z.coerce.date(),
 });
 
 export const bookingConfirmedEventSchema = z.object({
@@ -16,14 +16,14 @@ export const bookingConfirmedEventSchema = z.object({
   paymentId: z.uuid(),
   status: z.string(),
   version: z.int().positive(),
-  occurredAt: z.date(),
+  occurredAt: z.coerce.date(),
 });
 
 export const bookingRejectedEventSchema = z.object({
   bookingId: z.uuid(),
   status: z.string(),
   version: z.int().positive(),
-  occurredAt: z.date(),
+  occurredAt: z.coerce.date(),
 });
 
 export const bookingSeatsReservedEventSchema = z.object({
@@ -34,5 +34,5 @@ export const bookingSeatsReservedEventSchema = z.object({
   ),
   status: z.string(),
   version: z.int().positive(),
-  occurredAt: z.date(),
+  occurredAt: z.coerce.date(),
 });
