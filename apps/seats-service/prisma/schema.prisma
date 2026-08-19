@@ -28,7 +28,7 @@ model Seat {
   status              SeatStatus @default(AVAILABLE)
   reservedByBookingId String?    @db.Uuid
 
-  eventId String @unique @db.Uuid
+  eventId String @db.Uuid
   event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId, status])

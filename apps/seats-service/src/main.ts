@@ -3,6 +3,8 @@ import './instrumentation';
 import { NestFactory } from '@nestjs/core';
 import { SeatsServiceModule } from './application/seats-service.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ValidationPipe } from '@nestjs/common';
+import { AllExceptionsToRpcFilter } from '@app/shared';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
@@ -18,6 +20,19 @@ async function bootstrap() {
       },
     },
   );
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
+
+  app.useGlobalFilters(new AllExceptionsToRpcFilter());
 
   await app.listen();
 }

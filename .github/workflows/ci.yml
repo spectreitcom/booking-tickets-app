@@ -27,10 +27,14 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx prettier --check .
       - run: npm run prisma:seats:generate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - run: npm run prisma:booking:generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - run: npx prettier --write .
+      - run: npx prettier --check .
       - run: npm run lint
       - run: npm run test
       - run: npm run build

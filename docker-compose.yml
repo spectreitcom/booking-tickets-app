@@ -153,6 +153,7 @@ services:
     environment:
       - port=3000
       - DATABASE_URL=postgresql://user:password@booking-db:5432/booking
+      - RABBITMQ_URL=amqp://rabbitmq:5672
       - OTEL_SERVICE_NAME=booking-service
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
     volumes:

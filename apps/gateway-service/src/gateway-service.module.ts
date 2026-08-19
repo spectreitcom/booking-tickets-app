@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { EventsModule } from './endpoints/events/events.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { SEATS_SERVICE } from './constants';
+import { BOOKING_SERVICE, SEATS_SERVICE } from './constants';
 import Joi from 'joi';
+import { BookingsModule } from './endpoints/bookings/bookings.module';
 
 const envSchema = Joi.object({
   RABBITMQ_URL: Joi.string().required(),
@@ -21,20 +22,20 @@ const envSchema = Joi.object({
     ClientsModule.registerAsync({
       isGlobal: true,
       clients: [
-        // {
-        //   name: BOOKING_SERVICE,
-        //   useFactory: (configService: ConfigService) => ({
-        //     transport: Transport.RMQ,
-        //     options: {
-        //       urls: [configService.getOrThrow<string>('RABBITMQ_URL')],
-        //       queue: 'booking_queue',
-        //       queueOptions: {
-        //         durable: false,
-        //       },
-        //     },
-        //   }),
-        //   inject: [ConfigService],
-        // },
+        {
+          name: BOOKING_SERVICE,
+          useFactory: (configService: ConfigService) => ({
+            transport: Transport.RMQ,
+            options: {
+              urls: [configService.getOrThrow<string>('RABBITMQ_URL')],
+              queue: 'booking_queue',
+              queueOptions: {
+                durable: true,
+              },
+            },
+          }),
+          inject: [ConfigService],
+        },
         {
           name: SEATS_SERVICE,
           useFactory: (configService: ConfigService) => ({
@@ -52,6 +53,7 @@ const envSchema = Joi.object({
       ],
     }),
     EventsModule,
+    BookingsModule,
   ],
 })
 export class GatewayServiceModule {}

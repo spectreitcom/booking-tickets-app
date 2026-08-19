@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { GatewayServiceModule } from './gateway-service.module';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { MicroserviceExceptionFilter } from '@app/shared';
 
 async function bootstrap() {
   const app = await NestFactory.create(GatewayServiceModule);
@@ -13,6 +14,7 @@ async function bootstrap() {
     type: VersioningType.URI,
     defaultVersion: '1',
   });
+
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -23,6 +25,8 @@ async function bootstrap() {
       },
     }),
   );
+
+  app.useGlobalFilters(new MicroserviceExceptionFilter());
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Gateway Service')

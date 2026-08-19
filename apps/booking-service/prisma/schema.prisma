@@ -1,0 +1,132 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum BookingProcessStatus {
+  RUNNING
+  COMPENSATING
+  COMPLETED
+  FAILED
+}
+
+enum BookingProcessStep {
+  RESERVING_SEATS
+  CHARGING_PAYMENT
+  RELEASING_SEATS
+  COMPLETED
+  FAILED
+}
+
+enum BookingViewStatus {
+  PENDING
+  SEATS_RESERVED
+  CONFIRMED
+  REJECTED
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+}
+
+// Read model
+model BookingDetailsView {
+  id          String            @id @default(uuid(4)) @db.Uuid
+  // customerId String @db.Uuid
+  eventId     String            @db.Uuid
+  status      BookingViewStatus
+  seatIds     String[]
+  totalAmount Int?
+  paymentId   String?           @db.Uuid
+
+  // @@index([customerId, createdAt])
+  @@index([eventId])
+  @@index([status])
+}
+
+// SAGA
+model BookingProcess {
+  id          String               @id @default(uuid(4)) @db.Uuid
+  bookingId   String               @db.Uuid
+  status      BookingProcessStatus
+  currentStep BookingProcessStep
+  paymentId   String?              @db.Uuid
+  reatedAt    DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  completedAt DateTime?
+
+  @@index([status, currentStep])
+}
+
+// Outbox
+
+model OutboxMessage {
+  id            String       @id @default(uuid(4)) @db.Uuid
+  messageType   String       @db.VarChar(255)
+  exchange      String       @db.VarChar(60)
+  routingKey    String       @db.VarChar(255)
+  payload       Json         @db.JsonB
+  headers       Json         @default("{}") @db.JsonB
+  correlationId String       @db.Uuid
+  causationId   String?      @db.Uuid
+  sagaId        String?      @db.Uuid
+  status        OutboxStatus @default(PENDING)
+  attempts      Int          @default(0)
+  availableAt   DateTime     @default(now())
+  lockedAt      DateTime?
+  lockToken     String?      @db.Uuid
+  createdAt     DateTime     @default(now())
+
+  @@index([status, availableAt, createdAt])
+  @@index([status, availableAt, lockedAt])
+  @@index([correlationId])
+  @@index([sagaId])
+}
+
+// Event sourcing
+
+model Stream {
+  id             String        @id @default(uuid(4)) @db.Uuid
+  streamName     String        @unique @db.VarChar(255)
+  aggregateType  String        @db.VarChar(100)
+  aggregateId    String        @db.Uuid
+  currentVersion Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  events         StoredEvent[]
+
+  @@unique([aggregateType, aggregateId])
+  @@index([aggregateType])
+}
+
+model StoredEvent {
+  globalPosition BigInt   @id @default(autoincrement())
+  eventId        String   @unique @db.Uuid
+  streamId       String   @db.Uuid
+  streamVersion  Int
+  eventType      String   @db.VarChar(255)
+  eventData      Json     @db.JsonB
+  metadata       Json     @db.JsonB
+  occurredAt     DateTime
+  storedAt       DateTime @default(now())
+
+  stream Stream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@unique([streamId, streamVersion])
+  @@index([streamId, streamVersion])
+  @@index([globalPosition])
+  @@index([eventType, globalPosition])
+}

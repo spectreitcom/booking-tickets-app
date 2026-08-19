@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { BookingServiceModule } from '../src/booking-service.module';
+import { BookingServiceModule } from '../src/application/booking-service.module';
 
 describe('BookingServiceController (e2e)', () => {
   let app: INestApplication;

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "OutboxMessage" ADD COLUMN     "availableAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
