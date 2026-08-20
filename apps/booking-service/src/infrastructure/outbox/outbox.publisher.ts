@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { randomUUID } from 'node:crypto';
 import type { OutboxMessage as PrismaOutboxMessage } from '../../../generated/prisma/client';
@@ -24,12 +24,14 @@ type ClaimedOutboxMessage = Pick<
 
 @Injectable()
 export class OutboxPublisher {
+  private readonly logger = new Logger(OutboxPublisher.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly rabbitmqPublisher: RabbitmqPublisher,
   ) {}
 
-  @Cron(CronExpression.EVERY_MINUTE, { waitForCompletion: true })
+  @Cron(CronExpression.EVERY_10_SECONDS, { waitForCompletion: true })
   async process() {
     const outboxMessages = await this.claimMessages();
 
@@ -48,7 +50,11 @@ export class OutboxPublisher {
           where: { id: outboxMessage.id, lockToken: outboxMessage.lockToken },
           data: { status: 'PUBLISHED', lockedAt: null, lockToken: null },
         });
+
+        this.logger.debug(`Outbox message published: ${outboxMessage.id}`);
       } catch {
+        this.logger.error(`Outbox message failed: ${outboxMessage.id}`);
+
         if (outboxMessage.attempts + 1 >= MAX_ATTEMPTS) {
           await this.prismaService.outboxMessage.updateMany({
             where: { id: outboxMessage.id, lockToken: outboxMessage.lockToken },

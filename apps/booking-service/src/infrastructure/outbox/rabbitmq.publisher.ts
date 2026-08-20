@@ -4,6 +4,7 @@ import {
   ChannelWrapper,
   connect,
 } from 'amqp-connection-manager';
+import { ConfirmChannel } from 'amqplib';
 import { ConfigService } from '@nestjs/config';
 import { OutboxMessage } from '../../../generated/prisma/client';
 
@@ -11,8 +12,12 @@ import { OutboxMessage } from '../../../generated/prisma/client';
 export class RabbitmqPublisher implements OnModuleDestroy {
   private connection: AmqpConnectionManager;
   private channel: ChannelWrapper;
+  private readonly exchange: string;
 
   constructor(configService: ConfigService) {
+    this.exchange =
+      configService.get<string>('RABBITMQ_EXCHANGE') ?? 'domain_events';
+
     this.connection = connect([
       configService.getOrThrow<string>('RABBITMQ_URL'),
     ]);
@@ -20,6 +25,11 @@ export class RabbitmqPublisher implements OnModuleDestroy {
     this.channel = this.connection.createChannel({
       json: true,
       confirm: true,
+      setup: async (channel: ConfirmChannel) => {
+        await channel.assertExchange(this.exchange, 'topic', {
+          durable: true,
+        });
+      },
     });
   }
 
@@ -34,14 +44,19 @@ export class RabbitmqPublisher implements OnModuleDestroy {
       | 'routingKey'
     >,
   ) {
-    await this.channel.publish('', message.routingKey, {
-      messageType: message.messageType,
-      correlationId: message.correlationId,
-      causationId: message.causationId,
-      sagaId: message.sagaId,
-      payload: message.payload,
-      timestamp: Date.now(),
-    });
+    await this.channel.publish(
+      this.exchange,
+      message.routingKey,
+      {
+        messageType: message.messageType,
+        correlationId: message.correlationId,
+        causationId: message.causationId,
+        sagaId: message.sagaId,
+        payload: message.payload,
+        timestamp: Date.now(),
+      },
+      { persistent: true },
+    );
   }
 
   async onModuleDestroy() {
