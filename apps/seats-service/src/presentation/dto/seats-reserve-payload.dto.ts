@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsUUID } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsUUID } from 'class-validator';
 
 export class SeatsReservePayloadDto {
   @IsUUID()
@@ -8,7 +8,7 @@ export class SeatsReservePayloadDto {
   readonly bookingId: string;
 
   @IsArray()
-  @IsNotEmpty()
+  @ArrayNotEmpty()
   @IsUUID('4', { each: true })
   readonly seatIds: string[];
 }
