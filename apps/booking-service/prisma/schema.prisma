@@ -46,6 +46,7 @@ enum OutboxStatus {
 model BookingDetailsView {
   id          String            @id @default(uuid(4)) @db.Uuid
   // customerId String @db.Uuid
+  bookingId   String            @unique @db.Uuid
   eventId     String            @db.Uuid
   status      BookingViewStatus
   seatIds     String[]
