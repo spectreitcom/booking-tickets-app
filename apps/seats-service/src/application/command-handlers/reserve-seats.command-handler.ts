@@ -10,7 +10,7 @@ export class ReserveSeatsCommandHandler implements ICommandHandler<
   constructor(private readonly prismaService: PrismaService) {}
 
   async execute(command: ReserveSeatsCommand): Promise<string[]> {
-    const { seatIds } = command;
+    const { seatIds, bookingId } = command;
 
     const result = await this.prismaService.seat.updateManyAndReturn({
       where: {
@@ -21,6 +21,7 @@ export class ReserveSeatsCommandHandler implements ICommandHandler<
       },
       data: {
         status: 'RESERVED',
+        reservedByBookingId: bookingId,
       },
     });
 

@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { CreateEventDto } from './dto/create-event.dto';
 import { CreateEventCommand } from '../application/commands/create-event.command';
 import { AddSeatToEventDto } from './dto/add-seat-to-event.dto';
@@ -11,6 +11,8 @@ import { EventReadModel } from '../application/query-handlers/read-models/event.
 import { GetNotReservedSeatsByIdsQuery } from '../application/queries/get-not-reserved-seats-by-ids.query';
 import { SeatReadModel } from '../application/query-handlers/read-models/seat.read-model';
 import { GetNotReservedSeatsByIdsDto } from './dto/get-not-reserved-seats-by-ids.dto';
+import { SeatsReservePayloadDto } from './dto/seats-reserve-payload.dto';
+import { ReserveSeatsCommand } from '../application/commands/reserve-seats.command';
 
 @Controller()
 export class SeatsController {
@@ -48,5 +50,12 @@ export class SeatsController {
       GetNotReservedSeatsByIdsQuery,
       SeatReadModel[]
     >(new GetNotReservedSeatsByIdsQuery(payload.seatIds));
+  }
+
+  @EventPattern('seats.reserve.v1')
+  async handleSeatsReserve(data: SeatsReservePayloadDto) {
+    await this.commandBus.execute(
+      new ReserveSeatsCommand(data.seatIds, data.bookingId),
+    );
   }
 }

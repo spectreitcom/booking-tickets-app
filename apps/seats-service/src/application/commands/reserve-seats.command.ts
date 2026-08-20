@@ -7,8 +7,12 @@ export class ReserveSeatsCommand implements ICommand {
   @IsUUID('4', { each: true })
   readonly seatIds: string[];
 
-  constructor(seatIds: string[]) {
+  @IsUUID()
+  readonly bookingId: string;
+
+  constructor(seatIds: string[], bookingId: string) {
     this.seatIds = seatIds;
+    this.bookingId = bookingId;
     this.validate();
   }
 

@@ -23,7 +23,8 @@ describe('ReserveSeatsCommandHandler', () => {
 
   it('should reserve the requested seats and return their IDs', async () => {
     const seatIds = [randomUUID(), randomUUID()];
-    const command = new ReserveSeatsCommand(seatIds);
+    const bookingId = randomUUID();
+    const command = new ReserveSeatsCommand(seatIds, bookingId);
     const updateMany = jest.spyOn(prismaService.seat, 'updateManyAndReturn');
 
     updateMany.mockResolvedValue(
@@ -32,7 +33,7 @@ describe('ReserveSeatsCommandHandler', () => {
         status: 'RESERVED',
         price: 100,
         eventId: randomUUID(),
-        reservedByBookingId: null,
+        reservedByBookingId: bookingId,
       })),
     );
 
@@ -47,6 +48,7 @@ describe('ReserveSeatsCommandHandler', () => {
       },
       data: {
         status: 'RESERVED',
+        reservedByBookingId: bookingId,
       },
     });
     expect(result).toEqual(seatIds);
@@ -54,7 +56,8 @@ describe('ReserveSeatsCommandHandler', () => {
 
   it('should pass an empty seat ID list to the bulk update', async () => {
     const seatIds: string[] = [];
-    const command = new ReserveSeatsCommand(seatIds);
+    const bookingId = randomUUID();
+    const command = new ReserveSeatsCommand(seatIds, bookingId);
     const updateMany = jest.spyOn(prismaService.seat, 'updateManyAndReturn');
 
     updateMany.mockResolvedValue([]);
@@ -63,14 +66,15 @@ describe('ReserveSeatsCommandHandler', () => {
 
     expect(updateMany).toHaveBeenCalledWith({
       where: { id: { in: [] }, status: 'AVAILABLE' },
-      data: { status: 'RESERVED' },
+      data: { status: 'RESERVED', reservedByBookingId: bookingId },
     });
     expect(result).toEqual([]);
   });
 
   it('should propagate errors from the database', async () => {
     const seatIds = [randomUUID()];
-    const command = new ReserveSeatsCommand(seatIds);
+    const bookingId = randomUUID();
+    const command = new ReserveSeatsCommand(seatIds, bookingId);
     const databaseError = new Error('Database unavailable');
     const updateMany = jest.spyOn(prismaService.seat, 'updateManyAndReturn');
 
