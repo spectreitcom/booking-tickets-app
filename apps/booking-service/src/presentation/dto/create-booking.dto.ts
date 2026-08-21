@@ -1,11 +1,12 @@
 import {
+  ArrayNotEmpty,
   IsArray,
   IsInt,
-  IsNotEmpty,
   IsPositive,
   IsUUID,
   ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class SeatDto {
   @IsUUID()
@@ -21,7 +22,8 @@ export class CreateBookingDto {
   readonly eventId: string;
 
   @IsArray()
-  @IsNotEmpty()
+  @ArrayNotEmpty()
+  @Type(() => SeatDto)
   @ValidateNested({ each: true })
   readonly seats: SeatDto[];
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '../../../generated/prisma/client';
 import { EventToAppend } from './types';
 import { JsonObject } from '../../../generated/prisma/internal/prismaNamespace';
@@ -6,6 +6,8 @@ import { eventMapper } from './event-mapper';
 
 @Injectable()
 export class EventStore {
+  private readonly logger = new Logger('EventStore');
+
   async append(
     payload: {
       streamName: string;
@@ -78,6 +80,8 @@ export class EventStore {
         globalPosition: 'asc',
       },
     });
+
+    this.logger.debug(events);
 
     return events.map((event) => eventMapper(event));
   }

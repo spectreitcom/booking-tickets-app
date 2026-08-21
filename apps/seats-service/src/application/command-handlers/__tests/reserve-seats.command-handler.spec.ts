@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { PrismaService } from '../../../shared/prisma/prisma.service';
 import { ReserveSeatsCommand } from '../../commands/reserve-seats.command';
 import { ReserveSeatsCommandHandler } from '../reserve-seats.command-handler';
+import type { OutboxRepository } from '../../ports/outbox.repository';
 
 jest.mock('../../../shared/prisma/prisma.service', () => ({
   PrismaService: class PrismaService {},
@@ -10,15 +11,23 @@ jest.mock('../../../shared/prisma/prisma.service', () => ({
 describe('ReserveSeatsCommandHandler', () => {
   let handler: ReserveSeatsCommandHandler;
   let prismaService: jest.Mocked<PrismaService>;
+  let outboxRepository: jest.Mocked<OutboxRepository>;
 
   beforeEach(() => {
     prismaService = {
+      $transaction: jest.fn((cb: (tx: PrismaService) => Promise<unknown>) =>
+        cb(prismaService),
+      ),
       seat: {
         updateManyAndReturn: jest.fn(),
       },
     } as unknown as jest.Mocked<PrismaService>;
 
-    handler = new ReserveSeatsCommandHandler(prismaService);
+    outboxRepository = {
+      enqueue: jest.fn().mockResolvedValue(undefined),
+    };
+
+    handler = new ReserveSeatsCommandHandler(prismaService, outboxRepository);
   });
 
   it('should reserve the requested seats and return their IDs', async () => {
@@ -26,6 +35,7 @@ describe('ReserveSeatsCommandHandler', () => {
     const bookingId = randomUUID();
     const command = new ReserveSeatsCommand(seatIds, bookingId);
     const updateMany = jest.spyOn(prismaService.seat, 'updateManyAndReturn');
+    const enqueue = jest.spyOn(outboxRepository, 'enqueue');
 
     updateMany.mockResolvedValue(
       seatIds.map((id) => ({
@@ -51,6 +61,20 @@ describe('ReserveSeatsCommandHandler', () => {
         reservedByBookingId: bookingId,
       },
     });
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messageType: 'booking.mark-seats-reserved.v1',
+        routingKey: 'booking.mark-seats-reserved.v1',
+        payload: {
+          bookingId,
+        },
+        metadata: {
+          correlationId: expect.any(String) as string,
+          causationId: expect.any(String) as string,
+        },
+      }),
+      prismaService,
+    );
     expect(result).toEqual(seatIds);
   });
 
@@ -59,6 +83,7 @@ describe('ReserveSeatsCommandHandler', () => {
     const bookingId = randomUUID();
     const command = new ReserveSeatsCommand(seatIds, bookingId);
     const updateMany = jest.spyOn(prismaService.seat, 'updateManyAndReturn');
+    const enqueue = jest.spyOn(outboxRepository, 'enqueue');
 
     updateMany.mockResolvedValue([]);
 
@@ -68,6 +93,16 @@ describe('ReserveSeatsCommandHandler', () => {
       where: { id: { in: [] }, status: 'AVAILABLE' },
       data: { status: 'RESERVED', reservedByBookingId: bookingId },
     });
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messageType: 'booking.mark-seats-reserved.v1',
+        routingKey: 'booking.mark-seats-reserved.v1',
+        payload: {
+          bookingId,
+        },
+      }),
+      prismaService,
+    );
     expect(result).toEqual([]);
   });
 

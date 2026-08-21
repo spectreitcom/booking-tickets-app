@@ -17,4 +17,24 @@ export class PrismaBookingProcess implements BookingProcess {
       },
     });
   }
+
+  async chargingPayment(
+    payload: { bookingId: string },
+    tx: TransactionClient,
+  ): Promise<string> {
+    const saga = await tx.bookingProcess.findUnique({
+      where: { bookingId: payload.bookingId },
+    });
+
+    if (!saga) throw new Error('Saga not found');
+
+    await tx.bookingProcess.update({
+      where: { id: saga.id },
+      data: {
+        currentStep: 'CHARGING_PAYMENT',
+      },
+    });
+
+    return saga.id;
+  }
 }

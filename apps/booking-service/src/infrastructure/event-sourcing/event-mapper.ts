@@ -11,17 +11,24 @@ import {
 import { BookingConfirmedEvent } from '../../domain/events/booking-confirmed.event';
 import { BookingRejectedEvent } from '../../domain/events/booking-rejected.event';
 import { BookingSeatsReservedEvent } from '../../domain/events/booking-seats-reserved.event';
+import { Logger } from '@nestjs/common';
 
 function validateSchema<T>(schema: z.Schema<T>, data: unknown): T {
+  const logger = new Logger('validateSchema');
+  logger.debug(data);
+
   const validationResult = schema.safeParse(data);
   if (!validationResult.success) {
-    console.log('validationResult.error', validationResult.error);
+    logger.error('validationResult.error', validationResult.error);
     throw new Error('Invalid event data');
   }
   return validationResult.data;
 }
 
 export function eventMapper(event: StoredEvent) {
+  const logger = new Logger('eventMapper');
+  logger.debug(event.eventType);
+
   switch (event.eventType as BookingEventType) {
     case 'booking.created.v1': {
       const data = validateSchema(bookingCreatedEventSchema, event.eventData);
@@ -58,6 +65,7 @@ export function eventMapper(event: StoredEvent) {
         bookingSeatsReservedEventSchema,
         event.eventData,
       );
+
       return new BookingSeatsReservedEvent(
         data.bookingId,
         data.totalAmount,

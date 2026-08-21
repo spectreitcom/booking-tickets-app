@@ -8,4 +8,11 @@ export abstract class BookingProcess {
     },
     tx: Prisma.TransactionClient,
   ): Promise<void>;
+
+  abstract chargingPayment(
+    payload: {
+      bookingId: string;
+    },
+    tx: Prisma.TransactionClient,
+  ): Promise<string>;
 }

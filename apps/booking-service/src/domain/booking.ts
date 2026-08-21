@@ -11,6 +11,9 @@ import { BookingSeat } from './entities/booking-seat';
 import { BookingSeatsReservedEvent } from './events/booking-seats-reserved.event';
 import { BookingConfirmedEvent } from './events/booking-confirmed.event';
 import { BookingRejectedEvent } from './events/booking-rejected.event';
+import { Logger } from '@nestjs/common';
+
+const logger = new Logger('Booking');
 
 export class Booking extends AggregateRoot<BookingEvent> {
   private id: BookingId;
@@ -26,6 +29,8 @@ export class Booking extends AggregateRoot<BookingEvent> {
   }
 
   static create(eventId: string, seats: BookingSeat[]) {
+    logger.debug(eventId, seats[0], typeof seats[0]);
+
     if (!seats.length) {
       throw new NoSeatsProvided();
     }
@@ -166,6 +171,7 @@ export class Booking extends AggregateRoot<BookingEvent> {
   private onBookingSeatsReservedEvent(event: BookingSeatsReservedEvent) {
     this.version = AggregateVersion.of(event.version);
     this.status = BookingStatus.of(event.status);
+    this.seats = event.seats;
   }
 
   static rehydrate(id: BookingId, history: BookingEvent[]) {
