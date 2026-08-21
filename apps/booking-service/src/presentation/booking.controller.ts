@@ -23,7 +23,6 @@ export class BookingController {
 
   @EventPattern('booking.mark-seats-reserved.v1')
   async handleMarkSeatsReserved(data: { bookingId: string }) {
-    console.log('BookingController.handleMarkSeatsReserved', data); // todo;
     await this.commandBus.execute(new MarkSeatsReservedCommand(data.bookingId));
   }
 }
