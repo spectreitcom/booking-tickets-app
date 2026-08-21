@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { BOOKING_SERVICE, SEATS_SERVICE } from '../../constants';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -7,6 +7,8 @@ import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class BookingsService {
+  private readonly logger = new Logger('BookingsService');
+
   constructor(
     @Inject(BOOKING_SERVICE)
     private readonly bookingService: ClientProxy,
@@ -23,6 +25,8 @@ export class BookingsService {
         seatIds: payload.seatIds,
       }),
     );
+
+    this.logger.debug(seats);
 
     return await firstValueFrom(
       this.bookingService.send<

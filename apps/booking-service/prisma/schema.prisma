@@ -61,7 +61,7 @@ model BookingDetailsView {
 // SAGA
 model BookingProcess {
   id          String               @id @default(uuid(4)) @db.Uuid
-  bookingId   String               @db.Uuid
+  bookingId   String               @unique @db.Uuid
   status      BookingProcessStatus
   currentStep BookingProcessStep
   paymentId   String?              @db.Uuid

@@ -39,3 +39,35 @@ enum SeatStatus {
   AVAILABLE
   RESERVED
 }
+
+// Outbox
+
+model OutboxMessage {
+  id            String       @id @default(uuid(4)) @db.Uuid
+  messageType   String       @db.VarChar(255)
+  exchange      String       @db.VarChar(60)
+  routingKey    String       @db.VarChar(255)
+  payload       Json         @db.JsonB
+  headers       Json         @default("{}") @db.JsonB
+  correlationId String?      @db.Uuid
+  causationId   String?      @db.Uuid
+  sagaId        String?      @db.Uuid
+  status        OutboxStatus @default(PENDING)
+  attempts      Int          @default(0)
+  availableAt   DateTime     @default(now())
+  lockedAt      DateTime?
+  lockToken     String?      @db.Uuid
+  createdAt     DateTime     @default(now())
+
+  @@index([status, availableAt, createdAt])
+  @@index([status, availableAt, lockedAt])
+  @@index([correlationId])
+  @@index([sagaId])
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+}

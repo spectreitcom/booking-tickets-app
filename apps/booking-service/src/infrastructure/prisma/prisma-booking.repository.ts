@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { BookingRepository } from '../../application/ports/booking.repository';
 import { TransactionClient } from 'apps/booking-service/generated/prisma/internal/prismaNamespace';
 import { Booking } from '../../domain/booking';
@@ -12,6 +12,8 @@ import { Prisma } from '../../../generated/prisma/client';
 
 @Injectable()
 export class PrismaBookingRepository implements BookingRepository {
+  private readonly logger = new Logger('PrismaBookingRepository');
+
   constructor(
     private readonly eventStore: EventStore,
     private readonly prismaService: PrismaService,
@@ -22,7 +24,8 @@ export class PrismaBookingRepository implements BookingRepository {
     tx: TransactionClient,
     metadata: { correlationId: string; causationId?: string; sagaId?: string },
   ): Promise<void> {
-    console.log(metadata); // todo;
+    this.logger.debug(metadata);
+    this.logger.debug(booking);
     const events: EventToAppend[] = booking
       .getUncommittedEvents()
       .map((event) => ({
@@ -32,6 +35,8 @@ export class PrismaBookingRepository implements BookingRepository {
         data: eventSerializer(event),
         occurredAt: event.occurredAt,
       }));
+
+    this.logger.debug(events);
 
     await this.eventStore.append(
       {
